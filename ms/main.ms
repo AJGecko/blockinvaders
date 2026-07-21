@@ -1,15 +1,12 @@
 init = function()
-  menu = 2
+  menu = 1
+  startprotect = 1
+  highscore = storage.get("highscore")
   player = object
     lifes = 3
     x = 0
-    y = -70
+    y = -60
     hitbox = []
-  end
-  
-  removeself = function(self)
-    self = 0
-    
   end
   
   arrows = object
@@ -61,11 +58,14 @@ init = function()
       for obj in enemys.enemys
         if obj.hitbox[0] < this.x and obj.hitbox[1] > this.x and this.y > obj.hitbox[2] and this.y < obj.hitbox[3] and this.di == "up" then 
           obj.lifes -= 1
+          global.points += 1
           this.parent.del(this.id)
         end
       end
       if player.hitbox[0] < this.x and player.hitbox[1] > this.x and this.y > player.hitbox[2] and this.y < player.hitbox[3] and this.di == "down" then 
-          player.lifes -= 1
+          if not protect and not wprotect then
+            player.lifes -= 1
+          end
           this.parent.del(this.id)
         end
       end
@@ -186,17 +186,17 @@ end
 
 update = function()
   if menu == 1 then
-    
+    startupdate()
     
   end
   if menu == 2 then
-    if keyboard.RIGHT and player.x < screen.width/2 - 14 then
+    if keyboard.RIGHT and player.x < screen.width/2 - 14 and not protect then
       player.x += 2
     end
-    if keyboard.LEFT and player.x > -screen.width/2 + 14 then
+    if keyboard.LEFT and player.x > -screen.width/2 + 14 and not protect then
       player.x -= 2
     end
-    if mouse.left and not playerarrowlock then
+    if mouse.left and not playerarrowlock and not protect then
       arrows.add("up",random.nextInt(400), player.x, player.y+13)
       playerarrowlock = 1
     end
@@ -204,7 +204,16 @@ update = function()
       playerarrowlock = 0
     end
     
-    player.hitbox = [player.x-14,player.x+14,player.y-12,player.y+12]
+    if mouse.right or keyboard.SPACE then
+      protect = 1
+    else
+      protect = 0
+    end
+    if wprotect then
+      player.hitbox = [player.x-(14+12),player.x+(14+12),player.y-(12+12),player.y+(14+12)]
+    else
+      player.hitbox = [player.x-(14+protect*12),player.x+(14+protect*12),player.y-(12+protect*12),player.y+(14+protect*12)]
+    end
     enemys.update()
     arrows.update()
     
@@ -225,14 +234,83 @@ update = function()
       enemys.add(-120,70,random.nextInt(400)+400)
       enemys.add(120,70,random.nextInt(400)+400)
     end
+    
+    if startprotect - 0.0125 < 0 then 
+      
+    else  
+      startprotect -= 0.0125
+    end
+    if startprotect > 0.01 then
+      wprotect = 1
+    else
+      wprotect = 0
+    end
+    
+    if player.lifes <= 0 then
+      if highscore < points then
+        highscore = points
+        storage.set("highscore",highscore)
+      end
+      menu = 3 
+    end
+    
   end
   
+  if menu == 3 then
+    if mouse.x < 45 and mouse.x > -45 and mouse.y < -15 and mouse.y > -45 then
+      buttoncolor2 ="rgb(0,131,197)"
+      if mouse.left then
+        menu = 1
+        mouse.left = 0
+      end
+    else
+      buttoncolor2 = "rgb(0,170,255)"
+    end
+  end
 end
 
 draw = function()
   screen.clear("rgb(0,0,40)")
-  arrows.draw()
-  screen.drawSprite( "player", player.x, player.y, 24, 24 )
-  enemys.draw()
+  if menu == 1 then
+    startdraw()
+  end
+  if menu == 2 then
+    arrows.draw()
+    screen.drawSprite( "player", player.x, player.y, 24, 24 )
+    if protect == 1 then
+      screen.drawSprite( "protect", player.x, player.y, 48, 48  )
+    end
+    if wprotect == 1 then
+      screen.setAlpha(startprotect)
+      screen.drawSprite( "whiteprotect", player.x, player.y, 48, 48)
+      screen.setAlpha(1)
+    end
+    enemys.draw()
+    
+    screen.drawText("Points: " + points,80,-85,20,"#fff")
+    
+    if player.lifes == 3 then
+      screen.drawSprite( "heart", -90, -85, 13*2, 12*2)
+      screen.drawSprite( "heart", -118, -85, 13*2, 12*2)
+      screen.drawSprite( "heart", -62, -85, 13*2, 12*2)
+    elsif player.lifes == 2 then
+      screen.drawSprite( "heart", -90, -85, 13*2, 12*2)
+      screen.drawSprite( "heart", -118, -85, 13*2, 12*2)
+    elsif player.lifes == 1 then
+      screen.drawSprite( "heart", -118, -85, 13*2, 12*2)
+    end
+  end
+  
+  if menu == 3 then
+    screen.drawText("Game Over!",0,0,20,"#fff")
+    screen.fillRect(0,-30,90,25,buttoncolor2)
+    screen.drawText("Restart",0,-30,20,"rgb(227,236,255)")
+  end
 end
+
+
+
+
+
+
 
