@@ -4,6 +4,7 @@ init = function()
     lifes = 3
     x = 0
     y = -70
+    hitbox = []
   end
   
   removeself = function(self)
@@ -58,24 +59,29 @@ init = function()
         this.parent.del(this.id)
       end
       for obj in enemys.enemys
-        if obj.hitbox[0] < this.x and obj.hitbox[1] > this.x and this.y > obj.hitbox[2] and this.y < obj.hitbox[3] then 
+        if obj.hitbox[0] < this.x and obj.hitbox[1] > this.x and this.y > obj.hitbox[2] and this.y < obj.hitbox[3] and this.di == "up" then 
           obj.lifes -= 1
           this.parent.del(this.id)
         end
       end
-    end
+      if player.hitbox[0] < this.x and player.hitbox[1] > this.x and this.y > player.hitbox[2] and this.y < player.hitbox[3] and this.di == "down" then 
+          player.lifes -= 1
+          this.parent.del(this.id)
+        end
+      end
     draw = function()
       if this.di == "up" then
         screen.setDrawRotation(0)
+        style = "_p"
       end
       if this.di == "down" then
         screen.setDrawRotation(180)
+        style = "_e"
       end
       
-      screen.drawSprite( "arrow", this.x, this.y, 6,8)
+      screen.drawSprite( "arrow"+ style , this.x, this.y, 6,8)
       screen.setDrawRotation(0)
     end
-    
     
   end
   
@@ -110,6 +116,7 @@ init = function()
       this.y = y
       this.rlock = 0
       this.llock = 0
+      this.arlock = 0
       this.hitbox = []
       this.lifes = 1
       this.parent = parent
@@ -119,7 +126,7 @@ init = function()
       screen.drawSprite( "enemy", this.x, this.y, 28, 24)
     end
     update = function()
-      this.hitbox = [this.x-12,this.x+12,this.y-12,this.y+12]
+      this.hitbox = [this.x-14,this.x+14,this.y-12,this.y+12]
       if this.lifes <= 0 then
         this.parent.del(this.id)
       end
@@ -128,10 +135,10 @@ init = function()
       for obj in enemys.enemys
         if obj.id != this.id and obj.hitbox then 
           if abs(obj.y - this.y) < 15 then
-            if this.x < player.x and obj.x > this.x and (obj.x - this.x) < 32 then
+            if this.x < player.x and obj.x > this.x and (obj.x - this.x) < 40 then
               movelock = 1
             end
-            if this.x > player.x and obj.x < this.x and (this.x - obj.x) < 32 then
+            if this.x > player.x and obj.x < this.x and (this.x - obj.x) < 40 then
               movelock = 1
             end
           end
@@ -161,14 +168,19 @@ init = function()
             this.llock = 0
           end
         end
+        do
+          if abs(player.x - this.x) < 10 and this.arlock != 1 then
+            arrows.add("down",random.nextInt(400), this.x, this.y-13)
+            this.arlock = 1
+            sleep(random.nextInt(7000)+1000)
+            this.arlock = 0
+          end
+        end
       end
     end
     
   end
   
-  enemys.add(0,20,random.nextInt(400)+400)
-  enemys.add(0-40,20,random.nextInt(400)+400)
-  enemys.add(40,20,random.nextInt(400)+400)
   
 end
 
@@ -192,15 +204,33 @@ update = function()
       playerarrowlock = 0
     end
     
-    
+    player.hitbox = [player.x-14,player.x+14,player.y-12,player.y+12]
     enemys.update()
     arrows.update()
+    
+    if enemys.enemys.length == 0 then
+      enemys.add(0,20,random.nextInt(400)+400)
+      enemys.add(-40,20,random.nextInt(400)+400)
+      enemys.add(40,20,random.nextInt(400)+400)
+      enemys.add(80,20,random.nextInt(400)+400)
+      enemys.add(-80,20,random.nextInt(400)+400)
+      enemys.add(-120,20,random.nextInt(400)+400)
+      enemys.add(120,20,random.nextInt(400)+400)
+      
+      enemys.add(0,70,random.nextInt(400)+400)
+      enemys.add(-40,70,random.nextInt(400)+400)
+      enemys.add(40,70,random.nextInt(400)+400)
+      enemys.add(80,70,random.nextInt(400)+400)
+      enemys.add(-80,70,random.nextInt(400)+400)
+      enemys.add(-120,70,random.nextInt(400)+400)
+      enemys.add(120,70,random.nextInt(400)+400)
+    end
   end
   
 end
 
 draw = function()
-  screen.clear("rgb(0,0,20)")
+  screen.clear("rgb(0,0,40)")
   arrows.draw()
   screen.drawSprite( "player", player.x, player.y, 24, 24 )
   enemys.draw()
