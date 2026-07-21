@@ -1,12 +1,15 @@
 init = function()
   menu = 2
-  entitys = []
   player = object
     lifes = 3
     x = 0
     y = -70
   end
   
+  removeself = function(self)
+    self = 0
+    
+  end
   
   arrows = object
     arrows = []
@@ -42,10 +45,10 @@ init = function()
       this.parent = parent
     end
     update = function()
-      if di == "up" then
+      if this.di == "up" then
         this.y += 2
       end
-      if di == "down" then
+      if this.di == "down" then
         this.y -= 2
       end
       if abs(this.x) > screen.width/2 then
@@ -54,12 +57,18 @@ init = function()
       if abs(this.y) > screen.height/2 then
         this.parent.del(this.id)
       end
+      for obj in enemys.enemys
+        if obj.hitbox[0] < this.x and obj.hitbox[1] > this.x and this.y > obj.hitbox[2] and this.y < obj.hitbox[3] then 
+          obj.lifes -= 1
+          this.parent.del(this.id)
+        end
+      end
     end
     draw = function()
-      if di == "up" then
+      if this.di == "up" then
         screen.setDrawRotation(0)
       end
-      if di == "down" then
+      if this.di == "down" then
         screen.setDrawRotation(180)
       end
       
@@ -70,48 +79,96 @@ init = function()
     
   end
   
+  enemys = object
+    enemys = []
+    add = function(x ,y ,id)
+      local enemy = new enemy(x,y,id,this)
+      this.enemys.push(enemy)
+    end
+    del = function(id)
+      for obj in this.enemys
+        if obj.id == id then
+          this.enemys.removeElement(obj)
+        end
+      end
+    end
+    update = function()
+      for obj in this.enemys
+        obj.update()
+      end
+    end
+    draw = function()
+      for obj in this.enemys
+        obj.draw()
+      end
+    end
+  end
   
   enemy = class 
-    constructor = function(x,y)
+    constructor = function(x,y,id,parent)
       this.x = x
       this.y = y
       this.rlock = 0
       this.llock = 0
       this.hitbox = []
+      this.lifes = 1
+      this.parent = parent
+      this.id = id
     end
     draw = function()
       screen.drawSprite( "enemy", this.x, this.y, 28, 24)
     end
     update = function()
-      hitbox = [this.x-12,this.x+12,this.y-12]
-      do
-        if this.x < player.x and this.rlock != 1 then
-          if abs(player.x - this.x) > 5 then
-            this.x += 5
-          elsif player.x > this.x then
-            this.x += abs(player.x - this.x)
+      this.hitbox = [this.x-12,this.x+12,this.y-12,this.y+12]
+      if this.lifes <= 0 then
+        this.parent.del(this.id)
+      end
+      
+      local movelock = 0
+      for obj in enemys.enemys
+        if obj.id != this.id and obj.hitbox then 
+          if abs(obj.y - this.y) < 15 then
+            if this.x < player.x and obj.x > this.x and (obj.x - this.x) < 32 then
+              movelock = 1
+            end
+            if this.x > player.x and obj.x < this.x and (this.x - obj.x) < 32 then
+              movelock = 1
+            end
           end
-          this.rlock = 1
-          sleep(random.nextInt(600)+400)
-          this.rlock = 0
         end
-        if this.x > player.x and this.llock != 1 then
-          if abs(player.x - this.x) > 5 then
-            this.x -= 5
-          elsif player.x > this.x then
-            this.x -= (player.x - this.x)
+      end
+      
+      if not movelock then
+        do
+          if this.x < player.x and this.rlock != 1 then
+            if abs(player.x - this.x) > 5 then
+              this.x += 5
+            elsif player.x > this.x then
+              this.x += abs(player.x - this.x)
+            end
+            this.rlock = 1
+            sleep(random.nextInt(600)+400)
+            this.rlock = 0
           end
-          this.llock = 1
-          sleep(random.nextInt(600)+400)
-          this.llock = 0
+          if this.x > player.x and this.llock != 1 then
+            if abs(player.x - this.x) > 5 then
+              this.x -= 5
+            elsif player.x > this.x then
+              this.x -= (player.x - this.x)
+            end
+            this.llock = 1
+            sleep(random.nextInt(600)+400)
+            this.llock = 0
+          end
         end
       end
     end
     
   end
   
-  testenemy = new enemy(20,30)
-  
+  enemys.add(0,20,random.nextInt(400)+400)
+  enemys.add(0-40,20,random.nextInt(400)+400)
+  enemys.add(40,20,random.nextInt(400)+400)
   
 end
 
@@ -134,15 +191,18 @@ update = function()
     if not mouse.left then
       playerarrowlock = 0
     end
-    testenemy.update()
+    
+    
+    enemys.update()
+    arrows.update()
   end
-  arrows.update()
+  
 end
 
 draw = function()
   screen.clear("rgb(0,0,20)")
   arrows.draw()
   screen.drawSprite( "player", player.x, player.y, 24, 24 )
-  testenemy.draw()
+  enemys.draw()
 end
 
